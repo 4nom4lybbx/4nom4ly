@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>4NOM4LY</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- Livello ASCII a tutto schermo: sta dietro a titolo e countdown (vedi style.css) -->
+  <canvas id="screen"></canvas>
+
+  <main class="content">
+    <h1 class="title">4NOM4LY</h1>
+
+    <div class="countdown" role="timer" aria-label="Tempo rimanente">
+      <div class="unit">
+        <span class="value" data-unit="days">00</span>
+        <span class="label">giorni</span>
+      </div>
+      <div class="unit">
+        <span class="value" data-unit="hours">00</span>
+        <span class="label">ore</span>
+      </div>
+      <div class="unit">
+        <span class="value" data-unit="minutes">00</span>
+        <span class="label">minuti</span>
+      </div>
+      <div class="unit">
+        <span class="value" data-unit="seconds">00</span>
+        <span class="label">secondi</span>
+      </div>
+    </div>
+  </main>
+
+  <script src="./ascii.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

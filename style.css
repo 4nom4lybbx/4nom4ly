@@ -1,0 +1,130 @@
+/* ==========================================================================
+   4NOM4LY — layout
+   ========================================================================== */
+
+/* Font del titolo, caricato in locale (nessun servizio esterno) */
+@font-face {
+  font-family: "Stormfaze";
+  src: url("./stormfaze.regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* mostra il fallback finché il file non è pronto */
+}
+
+/* --------------------------------------------------------------------------
+   Variabili: modifica qui colori e font
+   -------------------------------------------------------------------------- */
+:root {
+  --bg: #000;
+  --text: #e6e4df;        /* bianco sporco */
+  --text-muted: #85847f;  /* grigio per le etichette */
+
+  --font-title: "Stormfaze", "Arial Black", Impact, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  background: var(--bg);
+  color: var(--text);
+  /* Spazio di sicurezza per notch e barre di sistema su smartphone */
+  padding:
+    env(safe-area-inset-top, 0px)
+    env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+}
+
+/* --------------------------------------------------------------------------
+   Contenuto
+   z-index: 1 → un futuro livello grafico (z-index: 0) resta sotto.
+   -------------------------------------------------------------------------- */
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* centro verticale */
+  flex: 1;
+  gap: clamp(1rem, 3vh, 2rem);
+  width: 100%;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+/* Titolo: scala con la larghezza dello schermo, non esce mai dal viewport */
+.title {
+  margin: 0;
+  max-width: 100%;
+  font-family: var(--font-title);
+  font-weight: normal;
+  font-size: clamp(2.25rem, 14vw, 13rem);
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* Countdown */
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: clamp(1rem, 4vw, 2.5rem);
+  font-family: var(--font-mono);
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.value {
+  font-size: clamp(1.5rem, 6.5vw, 3rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums; /* cifre di larghezza fissa: niente "ballo" */
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.label {
+  font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Livello ASCII (canvas): fisso, a tutto schermo, dietro al contenuto.
+   Non intercetta click né tocchi; il movimento del mouse viene comunque
+   letto dall'animazione tramite la finestra.
+   -------------------------------------------------------------------------- */
+#screen {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
