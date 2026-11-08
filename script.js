@@ -5,9 +5,9 @@
 (function () {
   "use strict";
 
-  // Scadenza: 17 aprile 2027, 00:00:00, ora locale del dispositivo.
-  // Nota: i mesi in JavaScript partono da 0 (3 = aprile).
-  var TARGET = new Date(2027, 3, 17, 0, 0, 0, 0).getTime();
+  // Scadenza: 3 marzo 2027, 00:00:00, ora locale del dispositivo.
+  // Nota: i mesi in JavaScript partono da 0 (2 = marzo).
+  var TARGET = new Date(2027, 2, 3, 0, 0, 0, 0).getTime();
 
   var els = {
     days: document.querySelector('[data-unit="days"]'),
