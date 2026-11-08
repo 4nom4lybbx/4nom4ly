@@ -150,6 +150,15 @@ function rotate3D(p,ax,ay,az){
  return [x,y,z];
 }
 
+// [OTTIMIZZATO] Stesso risultato grafico di prima, ma più leggero:
+// - seno/coseno calcolati una volta per chiamata, non per ogni punto
+// - niente array/oggetti creati per ogni punto (meno lavoro per il garbage collector)
+// - i punti troppo deboli (carattere " ") non vengono disegnati
+// - i colori rgba vengono riusati da una cache invece di essere ricostruiti ogni volta
+const ASCII_STYLES=[];
+let projX=new Float64Array(4096),projY=new Float64Array(4096),
+    projZ=new Float64Array(4096),projB=new Float64Array(4096);
+
 function drawAsciiText(word,options={}){
  const {
   x=W/2,y=H/2,
@@ -163,51 +172,75 @@ function drawAsciiText(word,options={}){
 
  const cloud=createCloud(word);
  const points=cloud.points;
- const projected=[];
  const scale=size/cloud.width;
  const camera=5;
 
+ const cX=Math.cos(angleX),sX=Math.sin(angleX);
+ const cY=Math.cos(angleY),sY=Math.sin(angleY);
+ const cZ=Math.cos(angleZ),sZ=Math.sin(angleZ);
+
+ const maxPoints=Math.ceil(points.length/detail);
+ if(projX.length<maxPoints){
+  const n=Math.max(maxPoints,projX.length*2);
+  projX=new Float64Array(n);projY=new Float64Array(n);
+  projZ=new Float64Array(n);projB=new Float64Array(n);
+ }
+
+ let count=0;
  for(let i=0;i<points.length;i+=detail){
   const p=points[i];
+  const px=p[0]*scale/size*2,py=p[1]*scale/size*2,pz=p[2]*1.5;
 
-  let q=rotate3D(
-   [p[0]*scale/size*2,p[1]*scale/size*2,p[2]*1.5],
-   angleX,angleY,angleZ
-  );
+  // stessa sequenza di rotazioni di rotate3D (X, poi Y, poi Z)
+  const y1=py*cX-pz*sX,z1=py*sX+pz*cX;
+  const x2=px*cY+z1*sY,z2=-px*sY+z1*cY;
+  const x3=x2*cZ-y1*sZ,y3=x2*sZ+y1*cZ;
 
-  const perspective=camera/(camera-q[2]);
-  let sx=x+q[0]*size*perspective;
-  let sy=y+q[1]*size*perspective*scaleY;
+  const perspective=camera/(camera-z2);
+  let sx=x+x3*size*perspective;
+  let sy=y+y3*size*perspective*scaleY;
 
   if(distortion>0&&Math.random()<distortion){
    sx+=(Math.random()-.5)*size*.18;
    sy+=(Math.random()-.5)*size*.08;
   }
 
-  projected.push({
-   x:sx,y:sy,z:q[2],brightness:p[3]
-  });
+  projX[count]=sx;projY[count]=sy;projZ[count]=z2;projB[count]=p[3];
+  count++;
  }
 
- projected.sort((a,b)=>a.z-b.z);
+ // Ordine di disegno dal fondo verso il davanti, come prima
+ const order=new Array(count);
+ for(let i=0;i<count;i++)order[i]=i;
+ order.sort((a,b)=>projZ[a]-projZ[b]);
 
  ctx.font=`${FONT}px monospace`;
  ctx.textBaseline="middle";
  ctx.textAlign="center";
 
- for(const p of projected){
-  if(p.x<0||p.x>W||p.y<0||p.y>H)continue;
+ let lastLevel=-1;
+ for(let k=0;k<count;k++){
+  const i=order[k];
+  const px=projX[i],py=projY[i],pz=projZ[i];
+  if(px<0||px>W||py<0||py>H)continue;
 
-  const depth=Math.max(.12,Math.min(1,(p.z+2)/4));
+  const depth=Math.max(.12,Math.min(1,(pz+2)/4));
   const light=Math.max(.12,Math.min(1,
-   (.55+p.z*.13)*p.brightness
+   (.55+pz*.13)*projB[i]
   ));
 
   const brightness=light*depth*intensity;
   const index=Math.floor(brightness*(CHARS.length-1));
+  if(index<=0)continue; // " " non disegna nulla
 
-  ctx.fillStyle=`rgba(245,245,245,${brightness})`;
-  ctx.fillText(CHARS[index],p.x,p.y);
+  const level=Math.round(brightness*64);
+  if(level!==lastLevel){
+   let style=ASCII_STYLES[level];
+   if(!style)style=ASCII_STYLES[level]=`rgba(245,245,245,${level/64})`;
+   ctx.fillStyle=style;
+   lastLevel=level;
+  }
+  ctx.fillText(CHARS[index],px,py);
  }
 }
 
@@ -395,6 +428,10 @@ function drawRotation(t,word){
  }
 }
 
+// [OTTIMIZZAZIONE] Regolazioni della scena dei "44"
+const PROP_DETAIL=10;    // prima 5. Più alto = meno punti per ogni "44" = più leggero
+const PROP_MIN_CELL=62;  // prima 46. Più alto = "44" più grandi e meno numerosi su schermi piccoli
+
 // ------------------------------------------------
 // 44 PROPAGATION — FULL-VIEWPORT RESPONSIVE FIELD — RESTORED GRID STYLE
 // ------------------------------------------------
@@ -405,7 +442,7 @@ function drawPropagation(t){
 
  // Cell size is derived from the shorter viewport dimension, so the
  // pattern remains dense in both portrait and landscape orientations.
- const cell=Math.max(46,Math.min(118,Math.min(W,H)*.115));
+ const cell=Math.max(PROP_MIN_CELL,Math.min(118,Math.min(W,H)*.115));
  const stepX=cell*1.02;
  const stepY=cell*.82;
  const cols=Math.ceil(W/stepX)+2;
@@ -436,7 +473,7 @@ function drawPropagation(t){
     angleY:time*.3+phase,
     angleZ:Math.sin(time+phase)*.09,
     intensity:alpha*.9,
-    detail:5
+    detail:PROP_DETAIL
    });
   }
  }
